@@ -12,7 +12,7 @@
 #define LEFT 2
 #define RIGHT 3
 
-void swap(int *a, int *b) {
+inline void swap(int *a, int *b) {
     *a ^= *b ^= *a ^= *b;
 }
 
