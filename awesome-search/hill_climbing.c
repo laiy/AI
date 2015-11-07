@@ -133,8 +133,45 @@ void solve_8_digits_problem() {
     fclose(fp);
 }
 
+int peers_of_attacking_queens(int *state) {
+    int peers = 0, i, j, k;
+    for (i = 0; i < 7; i++) {
+        for (j = i + 1; j < 8; j++)
+            if (state[j] == state[i])
+                peers++;
+        for (j = i + 1, k = state[i] + 1; j < 8 && k <= 8; j++, k++)
+            if (state[j] == k)
+                peers++;
+        for (j = i + 1, k = state[i] - 1; j < 8 && k >= 1; j++, k--)
+            if (state[j] == k)
+                peers++;
+    }
+    return peers;
+}
+
 void solve_one_case_of_8_queens_problem(int *state) {
     clock_t start_time = clock();
+    int h = peers_of_attacking_queens(state), i, j, best_i, best_j, temp, record;
+    while (h != 0) {
+        best_i = -1;
+        for (i = 1; i <= 8; i++) {
+            record = state[i - 1];
+            for (j = 1; j <= 8; j++) {
+                if (j != record) {
+                    state[i - 1] = j;
+                    temp = peers_of_attacking_queens(state);
+                    if (temp < h)
+                        h = temp, best_i = i, best_j = j;
+                }
+            }
+            state[i - 1] = record;
+        }
+        if (best_i == -1) {
+            eight_queens_problem_failed_times++;
+            return;
+        }
+        state[best_i - 1] = j;
+    }
     eight_queens_problem_time += (double)(clock() - start_time) / CLK_TCK;
 }
 
