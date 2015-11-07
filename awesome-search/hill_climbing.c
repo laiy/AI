@@ -6,6 +6,8 @@
 #include <ctime>
 #include <cmath>
 #include <cstdlib>
+#include <vector>
+#include <algorithm>
 
 #define TESRCASE 100000
 #define UP 0
@@ -13,10 +15,22 @@
 #define LEFT 2
 #define RIGHT 3
 
+struct State {
+    int direction, diff_manhattan;
+    State(int i, int dis) {
+        this->direction = i;
+        this->diff_manhattan = dis;
+    }
+    bool operator<(const State &s) const {
+        return diff_manhattan > s.diff_manhattan;
+    }
+};
+
 double eight_digits_problem_time;
 double eight_queens_problem_time;
 int eight_digits_problem_failed_times;
 int eight_queens_problem_failed_times;
+int diff_manhattan_distance;
 
 inline void swap(int *a, int *b) {
     *a ^= *b ^= *a ^= *b;
@@ -39,23 +53,31 @@ bool eight_digits_better(int *state, int position, int direction) {
         case UP:
             if (position <= 3)
                 return false;
-            else
+            else {
+                diff_manhattan_distance =  manhattan_distance(state[position - 4], position - 3) - manhattan_distance(state[position - 4], position);
                 return manhattan_distance(state[position - 4], position - 3) > manhattan_distance(state[position - 4], position);
+            }
         case DOWN:
             if (position >= 7)
                 return false;
-            else
+            else {
+                diff_manhattan_distance = manhattan_distance(state[position + 2], position + 3) - manhattan_distance(state[position + 2], position);
                 return manhattan_distance(state[position + 2], position + 3) > manhattan_distance(state[position + 2], position);
+            }
         case LEFT:
             if (position % 3 == 1)
                 return false;
-            else
+            else {
+                diff_manhattan_distance = manhattan_distance(state[position - 2], position - 1) - manhattan_distance(state[position - 2], position);
                 return manhattan_distance(state[position - 2], position - 1) > manhattan_distance(state[position - 2], position);
+            }
         case RIGHT:
             if (position % 3 == 0)
                 return false;
-            else
+            else {
+                diff_manhattan_distance =  manhattan_distance(state[position], position + 1) - manhattan_distance(state[position], position);
                 return manhattan_distance(state[position], position + 1) > manhattan_distance(state[position], position);
+            }
     }
     return false;
 }
@@ -71,10 +93,15 @@ void solve_one_case_of_8_digits_problem(int *state) {
         }
     while (!solved(state)) {
         found = false;
-        for (i = 0; i < 4; i++)
+        std::vector<State> v;
+        for (i = 0; i < 4; i++) {
             if (eight_digits_better(state, position, i)) {
                 found = true;
-                switch (i) {
+                v.push_back(State(i, diff_manhattan_distance));
+            }
+            if (i == 3 && found) {
+                std::sort(v.begin(), v.end());
+                switch (v[0].direction) {
                     case UP:
                         swap(&state[position - 1], &state[position - 4]), position -= 3;
                         break;
@@ -88,15 +115,14 @@ void solve_one_case_of_8_digits_problem(int *state) {
                         swap(&state[position - 1], &state[position]), position++;
                         break;
                 }
-                break;
             }
+        }
         if (!found) {
             eight_digits_problem_failed_times++;
             return;
         }
     }
     eight_digits_problem_time += (double)(clock() - start_time) / CLK_TCK;
-    printf("%lf\n", eight_digits_problem_time);
 }
 
 void solve_8_digits_problem() {
@@ -107,13 +133,24 @@ void solve_8_digits_problem() {
     fclose(fp);
 }
 
+void solve_one_case_of_8_queens_problem(int *state) {
+    clock_t start_time = clock();
+    eight_queens_problem_time += (double)(clock() - start_time) / CLK_TCK;
+}
+
 void solve_8_queens_problem() {
-    return;
+    FILE *fp = fopen("testcase_8_queens_problem", "r");
+    int original_state[8];
+    while (fscanf(fp, "%d %d %d %d %d %d %d %d", original_state, original_state + 1, original_state + 2, original_state + 3, original_state + 4, original_state + 5, original_state + 6, original_state + 7) != EOF)
+        solve_one_case_of_8_queens_problem(original_state);
+    fclose(fp);
 }
 
 void print_result() {
     printf("eight digits problem average solved times: %lf\n", eight_digits_problem_time / (double)(TESRCASE - eight_digits_problem_failed_times));
     printf("eight digits problem solved rate: %lf\n", 1 - double(eight_digits_problem_failed_times) / TESRCASE);
+    printf("eight queens problem average solved times: %lf\n", eight_queens_problem_time / (double)(TESRCASE - eight_queens_problem_failed_times));
+    printf("eight queens problem solved rate: %lf\n", 1 - double(eight_queens_problem_failed_times) / TESRCASE);
 }
 
 int main() {
