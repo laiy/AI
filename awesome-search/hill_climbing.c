@@ -40,22 +40,22 @@ bool eight_digits_better(int *state, int position, int direction) {
             if (position <= 3)
                 return false;
             else
-                return manhattan_distance(state[position - 4], position) > manhattan_distance(state[position - 4], position + 3);
+                return manhattan_distance(state[position - 4], position - 3) > manhattan_distance(state[position - 4], position);
         case DOWN:
             if (position >= 7)
                 return false;
             else
-                return manhattan_distance(state[position + 2], position) > manhattan_distance(state[position + 2], position - 3);
+                return manhattan_distance(state[position + 2], position + 3) > manhattan_distance(state[position + 2], position);
         case LEFT:
             if (position % 3 == 1)
                 return false;
             else
-                return manhattan_distance(state[position - 2], position) > manhattan_distance(state[position - 2], position + 1);
+                return manhattan_distance(state[position - 2], position - 1) > manhattan_distance(state[position - 2], position);
         case RIGHT:
             if (position % 3 == 0)
                 return false;
             else
-                return manhattan_distance(state[position], position) > manhattan_distance(state[position], position - 1);
+                return manhattan_distance(state[position], position + 1) > manhattan_distance(state[position], position);
     }
     return false;
 }
@@ -63,15 +63,17 @@ bool eight_digits_better(int *state, int position, int direction) {
 void solve_one_case_of_8_digits_problem(int *state) {
     clock_t start_time = clock();
     int position, i;
-    bool failed = false;
+    bool found;
     for (i = 0; i < 9; i++)
         if (state[i] == 0) {
             position = i + 1;
             break;
         }
     while (!solved(state)) {
+        found = false;
         for (i = 0; i < 4; i++)
             if (eight_digits_better(state, position, i)) {
+                found = true;
                 switch (i) {
                     case UP:
                         swap(&state[position - 1], &state[position - 4]), position -= 3;
@@ -87,15 +89,14 @@ void solve_one_case_of_8_digits_problem(int *state) {
                         break;
                 }
                 break;
-                if (i == 3)
-                    failed = true;
             }
-        if (failed) {
+        if (!found) {
             eight_digits_problem_failed_times++;
             return;
         }
     }
     eight_digits_problem_time += (double)(clock() - start_time) / CLK_TCK;
+    printf("%lf\n", eight_digits_problem_time);
 }
 
 void solve_8_digits_problem() {
