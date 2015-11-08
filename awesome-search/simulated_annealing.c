@@ -164,14 +164,15 @@ void solve_one_case_of_8_queens_problem(int *state) {
         }
         if (--tries_count == 0)
             tries_count = MAX_TRIES_IN_ONE_TEMPERATURE, temperature *= COLD_DOWN_RATE;
-        if (temperature < STOP_TEMPERATURE) {
+        if (!(temperature < STOP_TEMPERATURE) && (temp_h < h || ((double)(rand() % 1000) / 1000) < exp(temp_h / temperature)))
+            state[best_i - 1] = best_j, h = temp_h;
+        else {
             eight_queens_problem_failed_times++;
             return;
         }
-        if (temp_h < h || ((double)(rand() % 1000) / 1000) < exp(temp_h / temperature))
-            state[best_i - 1] = best_j, h = temp_h;
     }
     eight_queens_problem_time += (double)(clock() - start_time) / CLK_TCK;
+    printf("%lf\n", eight_queens_problem_time);
 }
 
 void solve_8_queens_problem() {
@@ -194,7 +195,7 @@ int main() {
     eight_queens_problem_time = 0;
     eight_digits_problem_failed_times = 0;
     eight_queens_problem_failed_times = 0;
-    solve_8_digits_problem();
+    /* solve_8_digits_problem(); */
     solve_8_queens_problem();
     print_result();
     return 0;
