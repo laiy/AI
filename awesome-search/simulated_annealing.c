@@ -10,28 +10,21 @@
 #include <algorithm>
 
 #define TESRCASE 100000
-#define STEP 100
 #define UP 0
 #define DOWN 1
 #define LEFT 2
 #define RIGHT 3
-
-struct State {
-    int direction, diff_manhattan;
-    State(int i, int dis) {
-        this->direction = i;
-        this->diff_manhattan = dis;
-    }
-    bool operator<(const State &s) const {
-        return diff_manhattan > s.diff_manhattan;
-    }
-};
+#define EIGHT_DIGITS_ORIGINAL_TEMPERATURE 10
+#define EIGHT_QUEENS_ORIGINAL_TEMPERATURE 50
+#define MAX_TRIES_IN_ONE_TEMPERATURE 300
+#define STOP_TEMPERATURE 0.000000001
+#define COLD_DOWN_RATE 0.8
 
 double eight_digits_problem_time;
 double eight_queens_problem_time;
 int eight_digits_problem_failed_times;
 int eight_queens_problem_failed_times;
-int diff_manhattan_distance;
+double temperature;
 
 inline void swap(int *a, int *b) {
     *a ^= *b ^= *a ^= *b;
@@ -50,100 +43,57 @@ inline int manhattan_distance(int num, int position) {
 }
 
 bool eight_digits_better(int *state, int position, int direction) {
+    int dis;
     switch (direction) {
         case UP:
             if (position <= 3)
                 return false;
             else {
-                diff_manhattan_distance =  manhattan_distance(state[position - 4], position - 3) - manhattan_distance(state[position - 4], position);
-                return manhattan_distance(state[position - 4], position - 3) > manhattan_distance(state[position - 4], position);
+                dis = manhattan_distance(state[position - 4], position - 3) - manhattan_distance(state[position - 4], position);
+                return (dis > 0) ? true : ((double)(rand() % 1000) / 1000) < exp(dis / temperature);
             }
         case DOWN:
             if (position >= 7)
                 return false;
             else {
-                diff_manhattan_distance = manhattan_distance(state[position + 2], position + 3) - manhattan_distance(state[position + 2], position);
-                return manhattan_distance(state[position + 2], position + 3) > manhattan_distance(state[position + 2], position);
+                dis = manhattan_distance(state[position + 2], position + 3) - manhattan_distance(state[position + 2], position);
+                return (dis > 0) ? true : ((double)(rand() % 1000) / 1000) < exp(dis / temperature);
             }
         case LEFT:
             if (position % 3 == 1)
                 return false;
             else {
-                diff_manhattan_distance = manhattan_distance(state[position - 2], position - 1) - manhattan_distance(state[position - 2], position);
-                return manhattan_distance(state[position - 2], position - 1) > manhattan_distance(state[position - 2], position);
+                dis = manhattan_distance(state[position - 2], position - 1) - manhattan_distance(state[position - 2], position);
+                return (dis > 0) ? true : ((double)(rand() % 1000) / 1000) < exp(dis / temperature);
             }
         case RIGHT:
             if (position % 3 == 0)
                 return false;
             else {
-                diff_manhattan_distance =  manhattan_distance(state[position], position + 1) - manhattan_distance(state[position], position);
-                return manhattan_distance(state[position], position + 1) > manhattan_distance(state[position], position);
+                dis = manhattan_distance(state[position], position + 1) - manhattan_distance(state[position], position);
+                return (dis > 0) ? true : ((double)(rand() % 1000) / 1000) < exp(dis / temperature);
             }
     }
     return false;
 }
 
-void eight_digits_random_state(int *s) {
-    int state[9] = {1, 2, 3, 4, 5, 6, 7, 8, 0}, steps, position, direction;
-    steps = STEP;
-    position = 9;
-    while (steps--) {
-        direction = rand() % 4;
-        switch (direction) {
-            case UP:
-                if (position <= 3)
-                    break;
-                else {
-                    swap(&state[position - 1], &state[position - 4]), position -= 3;
-                    break;
-                }
-            case DOWN:
-                if (position >= 7)
-                    break;
-                else {
-                    swap(&state[position - 1], &state[position + 2]), position += 3;
-                    break;
-                }
-            case LEFT:
-                if (position % 3 == 1)
-                    break;
-                else {
-                    swap(&state[position - 1], &state[position - 2]), position--;
-                    break;
-                }
-            case RIGHT:
-                if (position % 3 == 0)
-                    break;
-                else {
-                    swap(&state[position - 1], &state[position]), position++;
-                    break;
-                }
-        }
-    }
-    for (int i = 0; i < 9; i++)
-        s[i] = state[i];
-}
-
 void solve_one_case_of_8_digits_problem(int *state) {
     clock_t start_time = clock();
-    int position, i;
+    int position, i, tries_count;
     bool found;
     for (i = 0; i < 9; i++)
         if (state[i] == 0) {
             position = i + 1;
             break;
         }
+    temperature = EIGHT_DIGITS_ORIGINAL_TEMPERATURE;
+    tries_count = MAX_TRIES_IN_ONE_TEMPERATURE;
     while (!solved(state)) {
         found = false;
-        std::vector<State> v;
-        for (i = 0; i < 4; i++) {
+        for (i = 0; i < 4; i++)
             if (eight_digits_better(state, position, i)) {
                 found = true;
-                v.push_back(State(i, diff_manhattan_distance));
-            }
-            if (i == 3 && found) {
-                std::sort(v.begin(), v.end());
-                switch (v[0].direction) {
+                switch (i) {
                     case UP:
                         swap(&state[position - 1], &state[position - 4]), position -= 3;
                         break;
@@ -157,10 +107,14 @@ void solve_one_case_of_8_digits_problem(int *state) {
                         swap(&state[position - 1], &state[position]), position++;
                         break;
                 }
+                break;
             }
+        if (--tries_count == 0)
+            tries_count = MAX_TRIES_IN_ONE_TEMPERATURE, temperature *= COLD_DOWN_RATE;
+        if (!found || temperature < STOP_TEMPERATURE) {
+            eight_digits_problem_failed_times++;
+            return;
         }
-        if (!found)
-            eight_digits_random_state(state);
     }
     eight_digits_problem_time += (double)(clock() - start_time) / CLK_TCK;
 }
@@ -189,32 +143,33 @@ int peers_of_attacking_queens(int *state) {
     return peers;
 }
 
-inline void eight_queens_random_state(int *state) {
-    for (int i = 0; i < 8; i++)
-        state[i] = rand() % 8 + 1;
-}
-
 void solve_one_case_of_8_queens_problem(int *state) {
     clock_t start_time = clock();
-    int h = peers_of_attacking_queens(state), i, j, best_i, best_j, temp, record;
+    int h = peers_of_attacking_queens(state), i, j, best_i, best_j, temp, record, tries_count, temp_h;
+    temperature = EIGHT_QUEENS_ORIGINAL_TEMPERATURE;
+    tries_count = MAX_TRIES_IN_ONE_TEMPERATURE;
     while (h != 0) {
-        best_i = -1;
+        temp_h = 28;
         for (i = 1; i <= 8; i++) {
             record = state[i - 1];
             for (j = 1; j <= 8; j++) {
                 if (j != record) {
                     state[i - 1] = j;
                     temp = peers_of_attacking_queens(state);
-                    if (temp < h)
-                        h = temp, best_i = i, best_j = j;
+                    if (temp < temp_h)
+                        temp_h = temp, best_i = i, best_j = j;
                 }
             }
             state[i - 1] = record;
         }
-        if (best_i == -1)
-            eight_queens_random_state(state), h = peers_of_attacking_queens(state);
-        else
-            state[best_i - 1] = best_j;
+        if (--tries_count == 0)
+            tries_count = MAX_TRIES_IN_ONE_TEMPERATURE, temperature *= COLD_DOWN_RATE;
+        if (temperature < STOP_TEMPERATURE) {
+            eight_queens_problem_failed_times++;
+            return;
+        }
+        if (temp_h < h || ((double)(rand() % 1000) / 1000) < exp(temp_h / temperature))
+            state[best_i - 1] = best_j, h = temp_h;
     }
     eight_queens_problem_time += (double)(clock() - start_time) / CLK_TCK;
 }

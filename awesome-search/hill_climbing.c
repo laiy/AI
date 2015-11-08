@@ -170,7 +170,7 @@ void solve_one_case_of_8_queens_problem(int *state) {
             eight_queens_problem_failed_times++;
             return;
         }
-        state[best_i - 1] = j;
+        state[best_i - 1] = best_j;
     }
     eight_queens_problem_time += (double)(clock() - start_time) / CLK_TCK;
 }
