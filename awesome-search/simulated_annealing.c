@@ -172,7 +172,6 @@ void solve_one_case_of_8_queens_problem(int *state) {
         }
     }
     eight_queens_problem_time += (double)(clock() - start_time) / CLK_TCK;
-    printf("%lf\n", eight_queens_problem_time);
 }
 
 void solve_8_queens_problem() {
@@ -195,7 +194,7 @@ int main() {
     eight_queens_problem_time = 0;
     eight_digits_problem_failed_times = 0;
     eight_queens_problem_failed_times = 0;
-    /* solve_8_digits_problem(); */
+    solve_8_digits_problem();
     solve_8_queens_problem();
     print_result();
     return 0;
